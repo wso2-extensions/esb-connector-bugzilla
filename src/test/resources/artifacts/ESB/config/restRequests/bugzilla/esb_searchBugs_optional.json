@@ -1,0 +1,9 @@
+{
+  "apiUrl": "%s(apiUrl)",
+  "apiKey": "%s(apiKey)",
+  "severity": "%s(bugSeverity)",
+  "priority": "%s(bugPriority)",
+  "version": "%s(productVersion)",
+  "opSys": "%s(bugOPSys)",
+  "platform": "%s(bugPlatform)"
+}
