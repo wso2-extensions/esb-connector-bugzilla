@@ -18,6 +18,10 @@ package org.wso2.carbon.connector.integration.test.bugzilla;
 * under the License.
 */
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.testng.Assert;
@@ -25,10 +29,6 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.connector.integration.test.base.ConnectorIntegrationTestBase;
 import org.wso2.connector.integration.test.base.RestResponse;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBase {
 
@@ -46,7 +46,7 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
     @BeforeClass(alwaysRun = true)
     public void setEnvironment() throws Exception {
 
-        init("bugzilla-connector-1.0.1");
+        init("bugzilla-connector-1.0.1-SNAPSHOT");
 
         esbRequestHeadersMap.put("Accept-Charset", "UTF-8");
         esbRequestHeadersMap.put("Content-Type", "application/json");
@@ -70,13 +70,13 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
         esbRequestHeadersMap.put("Action", "urn:createProduct");
         RestResponse<JSONObject> esbRestResponse =
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_createProduct_mandatory.json");
-        final String productId = esbRestResponse.getBody().getString("id");
+        final String productId = esbRestResponse.getBody().getJSONObject("result").getString("id");
         connectorProperties.put("productId", productId);
 
         final String apiEndpoint = apiEndpointUrl + "/product/" + productId + authString;
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("products").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("products").getJSONObject(0);
 
         Assert.assertEquals(connectorProperties.getProperty("productName"), apiResponse.getString("name"));
         Assert.assertEquals(connectorProperties.getProperty("productDescription"), apiResponse.getString("description"));
@@ -97,14 +97,14 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
         RestResponse<JSONObject> esbRestResponse =
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_createProduct_optional.json");
 
-        final String productIdOpt = esbRestResponse.getBody().getString("id");
+        final String productIdOpt = esbRestResponse.getBody().getJSONObject("result").getString("id");
         connectorProperties.put("productIdOpt", productIdOpt);
 
         final String apiEndpoint = apiEndpointUrl + "/product/" + productIdOpt + authString;
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("products").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("products").getJSONObject(0);
 
         Assert.assertEquals(connectorProperties.getProperty("productNameOpt"), apiResponse.getString("name"));
         Assert.assertEquals(connectorProperties.getProperty("productDescriptionOpt"),
@@ -132,10 +132,10 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                 sendJsonRestRequest(apiEndpoint, "POST", apiRequestHeadersMap, "api_createProduct_negative.json");
 
         Assert.assertEquals(esbRestResponse.getHttpStatusCode(), apiRestResponse.getHttpStatusCode());
-        Assert.assertEquals(esbRestResponse.getBody().getString("code"), apiRestResponse
-                .getBody().getString("code"));
-        Assert.assertEquals(esbRestResponse.getBody().getString("message"), apiRestResponse
-                .getBody().getString("message"));
+        Assert.assertEquals(esbRestResponse.getBody().getJSONObject("result").getString("code"), apiRestResponse
+                .getBody().getJSONObject("result").getString("code"));
+        Assert.assertEquals(esbRestResponse.getBody().getJSONObject("result").getString("message"), apiRestResponse
+                .getBody().getJSONObject("result").getString("message"));
     }
 
     /**
@@ -152,14 +152,14 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_searchProducts_mandatory.json");
 
         JSONObject esbResponse =
-                esbRestResponse.getBody().getJSONArray("products").getJSONObject(0);
+                esbRestResponse.getBody().getJSONObject("result").getJSONArray("products").getJSONObject(0);
 
         final String apiEndpoint =
                 apiEndpointUrl + "/product" + authString + "&ids=" + connectorProperties.getProperty("productId");
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("products").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("products").getJSONObject(0);
 
         Assert.assertEquals(apiResponse.getString("name"), esbResponse.getString("name"));
         Assert.assertEquals(apiResponse.getString("description"), esbResponse.getString("description"));
@@ -172,8 +172,7 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
      * @throws JSONException
      * @throws IOException
      */
-    @Test(groups = {"wso2.esb"}, description = "bugzilla {searchProducts} integration test with includeFields parameters.",
-            dependsOnMethods = {"testCreateProductWithMandatoryParameters"})
+    @Test(groups = {"wso2.esb"}, description = "bugzilla {searchProducts} integration test with includeFields parameters.", dependsOnMethods = {"testCreateProductWithMandatoryParameters"})
     public void testSearchProductsWithIncludeFieldsParameter() throws IOException, JSONException {
 
         esbRequestHeadersMap.put("Action", "urn:searchProducts");
@@ -181,14 +180,14 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_searchProducts_includeFields.json");
 
         JSONObject esbResponse =
-                esbRestResponse.getBody().getJSONArray("products").getJSONObject(0);
+                esbRestResponse.getBody().getJSONObject("result").getJSONArray("products").getJSONObject(0);
 
         final String apiEndpoint =
                 apiEndpointUrl + "/product" + authString + "&ids=" + connectorProperties.getProperty("productId");
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("products").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("products").getJSONObject(0);
 
         Assert.assertEquals(apiResponse.getString("name"), esbResponse.getString("name"));
         Assert.assertEquals(apiResponse.getString("id"), esbResponse.getString("id"));
@@ -202,8 +201,7 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
      * @throws JSONException
      * @throws IOException
      */
-    @Test(groups = {"wso2.esb"}, description = "bugzilla {searchProducts} integration test with excludeFields parameters.",
-            dependsOnMethods = {"testCreateProductWithMandatoryParameters"})
+    @Test(groups = {"wso2.esb"}, description = "bugzilla {searchProducts} integration test with excludeFields parameters.", dependsOnMethods = {"testCreateProductWithMandatoryParameters"})
     public void testSearchProductsWithExcludeFieldsParameter() throws IOException, JSONException {
 
         esbRequestHeadersMap.put("Action", "urn:searchProducts");
@@ -211,14 +209,14 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_searchProducts_excludeFields.json");
 
         JSONObject esbResponse =
-                esbRestResponse.getBody().getJSONArray("products").getJSONObject(0);
+                esbRestResponse.getBody().getJSONObject("result").getJSONArray("products").getJSONObject(0);
 
         final String apiEndpoint =
                 apiEndpointUrl + "/product" + authString + "&ids=" + connectorProperties.getProperty("productId");
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("products").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("products").getJSONObject(0);
 
         Assert.assertEquals(apiResponse.getString("id"), esbResponse.getString("id"));
         Assert.assertEquals(apiResponse.getString("is_active"), esbResponse.getString("is_active"));
@@ -245,10 +243,10 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                 sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap, "api_searchProducts_negative.json");
 
         Assert.assertEquals(esbRestResponse.getHttpStatusCode(), apiRestResponse.getHttpStatusCode());
-        Assert.assertEquals(esbRestResponse.getBody().getString("code"), apiRestResponse
-                .getBody().getString("code"));
-        Assert.assertEquals(esbRestResponse.getBody().getString("message"), apiRestResponse
-                .getBody().getString("message"));
+        Assert.assertEquals(esbRestResponse.getBody().getJSONObject("result").getString("code"), apiRestResponse
+                .getBody().getJSONObject("result").getString("code"));
+        Assert.assertEquals(esbRestResponse.getBody().getJSONObject("result").getString("message"), apiRestResponse
+                .getBody().getJSONObject("result").getString("message"));
     }
 
     /**
@@ -264,14 +262,14 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
         RestResponse<JSONObject> esbRestResponse =
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_createUser_mandatory.json");
 
-        final String userId = esbRestResponse.getBody().getString("id");
+        final String userId = esbRestResponse.getBody().getJSONObject("result").getString("id");
         connectorProperties.put("userId", userId);
 
         final String apiEndpoint = apiEndpointUrl + "/user/" + userId + authString;
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("users").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("users").getJSONObject(0);
 
         Assert.assertEquals(connectorProperties.getProperty("emailMand"), apiResponse.getString("email"));
     }
@@ -289,13 +287,13 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
         RestResponse<JSONObject> esbRestResponse =
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_createUser_optional.json");
 
-        final String userId = esbRestResponse.getBody().getString("id");
+        final String userId = esbRestResponse.getBody().getJSONObject("result").getString("id");
 
         final String apiEndpoint = apiEndpointUrl + "/user/" + userId + authString;
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("users").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("users").getJSONObject(0);
 
         Assert.assertEquals(connectorProperties.getProperty("emailOpt"), apiResponse.getString("email"));
         Assert.assertEquals(connectorProperties.getProperty("userName"), apiResponse.getString("real_name"));
@@ -314,13 +312,13 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
         RestResponse<JSONObject> esbRestResponse =
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_createUser_negative.json");
 
-        JSONObject esbResponse = esbRestResponse.getBody();
+        JSONObject esbResponse = esbRestResponse.getBody().getJSONObject("result");
 
         final String apiEndpoint = apiEndpointUrl + "/user" + authString;
         RestResponse<JSONObject> apiRestResponse =
                 sendJsonRestRequest(apiEndpoint, "POST", apiRequestHeadersMap, "api_createUser_negative.json");
 
-        JSONObject apiResponse = apiRestResponse.getBody();
+        JSONObject apiResponse = apiRestResponse.getBody().getJSONObject("result");
 
         Assert.assertEquals(apiResponse.get("code"), esbResponse.get("code"));
         Assert.assertEquals(apiResponse.get("error"), esbResponse.get("error"));
@@ -333,8 +331,7 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
      * @throws JSONException
      * @throws IOException
      */
-    @Test(groups = {"wso2.esb"}, dependsOnMethods = {"testCreateUserWithMandatoryParameters"},
-            description = "bugzilla {searchUsers} integration test with optional parameters.")
+    @Test(groups = {"wso2.esb"}, dependsOnMethods = {"testCreateUserWithMandatoryParameters"}, description = "bugzilla {searchUsers} integration test with optional parameters.")
     public void testSearchUsersWithOptionalParameters() throws IOException, JSONException {
 
         esbRequestHeadersMap.put("Action", "urn:searchUsers");
@@ -342,14 +339,14 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_searchUsers_optional.json");
 
         JSONObject esbResponse =
-                esbRestResponse.getBody().getJSONArray("users").getJSONObject(0);
+                esbRestResponse.getBody().getJSONObject("result").getJSONArray("users").getJSONObject(0);
 
         final String apiEndpoint =
                 apiEndpointUrl + "/user" + authString + "&ids=" + connectorProperties.getProperty("userId");
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("users").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("users").getJSONObject(0);
 
         Assert.assertEquals(apiResponse.getString("id"), esbResponse.getString("id"));
         Assert.assertEquals(apiResponse.getString("name"), esbResponse.getString("name"));
@@ -371,12 +368,12 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
         RestResponse<JSONObject> esbRestResponse =
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_searchUsers_negative.json");
 
-        JSONObject esbResponse = esbRestResponse.getBody();
+        JSONObject esbResponse = esbRestResponse.getBody().getJSONObject("result");
 
         final String apiEndpoint = apiEndpointUrl + "/user" + authString + "&ids=INVALID";
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
-        JSONObject apiResponse = apiRestResponse.getBody();
+        JSONObject apiResponse = apiRestResponse.getBody().getJSONObject("result");
 
         Assert.assertEquals(apiResponse.get("code"), esbResponse.get("code"));
         Assert.assertEquals(apiResponse.get("error"), esbResponse.get("error"));
@@ -389,22 +386,22 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
      * @throws JSONException
      * @throws IOException
      */
-    @Test(groups = {"wso2.esb"}, description = "bugzilla {createComponent} integration test with mandatory parameters.",
-            dependsOnMethods = {"testCreateProductWithMandatoryParameters", "testCreateUserWithMandatoryParameters"})
+    @Test(groups = {"wso2.esb"}, description = "bugzilla {createComponent} integration test with mandatory parameters.", dependsOnMethods = {
+            "testCreateProductWithMandatoryParameters", "testCreateUserWithMandatoryParameters"})
     public void testCreateComponentWithMandatoryParameters() throws IOException, JSONException {
 
         esbRequestHeadersMap.put("Action", "urn:createComponent");
         RestResponse<JSONObject> esbRestResponse =
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_createComponent_mandatory.json");
 
-        final String componentId = esbRestResponse.getBody().getString("id");
+        final String componentId = esbRestResponse.getBody().getJSONObject("result").getString("id");
 
         final String apiEndpoint =
                 apiEndpointUrl + "/product/" + connectorProperties.getProperty("productId") + authString;
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("products").getJSONObject(0)
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("products").getJSONObject(0)
                         .getJSONArray("components").getJSONObject(0);
 
         Assert.assertEquals(componentId, apiResponse.getString("id"));
@@ -419,8 +416,8 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
      * @throws JSONException
      * @throws IOException
      */
-    @Test(groups = {"wso2.esb"}, description = "bugzilla {createComponent} integration test with optional parameters.",
-            dependsOnMethods = {"testCreateProductWithOptionalParameters", "testCreateUserWithMandatoryParameters"})
+    @Test(groups = {"wso2.esb"}, description = "bugzilla {createComponent} integration test with optional parameters.", dependsOnMethods = {
+            "testCreateProductWithOptionalParameters", "testCreateUserWithMandatoryParameters"})
     public void testCreateComponentWithOptionalParameters() throws IOException, JSONException {
 
         esbRequestHeadersMap.put("Action", "urn:createComponent");
@@ -432,7 +429,7 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("products").getJSONObject(0)
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("products").getJSONObject(0)
                         .getJSONArray("components").getJSONObject(0);
 
         Assert.assertEquals(connectorProperties.getProperty("componentName"), apiResponse.getString("name"));
@@ -459,10 +456,10 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                 sendJsonRestRequest(apiEndpoint, "POST", apiRequestHeadersMap, "api_createComponent_negative.json");
 
         Assert.assertEquals(esbRestResponse.getHttpStatusCode(), apiRestResponse.getHttpStatusCode());
-        Assert.assertEquals(esbRestResponse.getBody().getString("code"), apiRestResponse
-                .getBody().getString("code"));
-        Assert.assertEquals(esbRestResponse.getBody().getString("message"), apiRestResponse
-                .getBody().getString("message"));
+        Assert.assertEquals(esbRestResponse.getBody().getJSONObject("result").getString("code"), apiRestResponse
+                .getBody().getJSONObject("result").getString("code"));
+        Assert.assertEquals(esbRestResponse.getBody().getJSONObject("result").getString("message"), apiRestResponse
+                .getBody().getJSONObject("result").getString("message"));
     }
 
     /**
@@ -471,22 +468,22 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
      * @throws JSONException
      * @throws IOException
      */
-    @Test(groups = {"wso2.esb"}, description = "bugzilla {createBug} integration test with mandatory parameters.",
-            dependsOnMethods = {"testCreateProductWithMandatoryParameters", "testCreateComponentWithMandatoryParameters"})
+    @Test(groups = {"wso2.esb"}, description = "bugzilla {createBug} integration test with mandatory parameters.", dependsOnMethods = {
+            "testCreateProductWithMandatoryParameters", "testCreateComponentWithMandatoryParameters"})
     public void testCreateBugWithMandatoryParameters() throws IOException, JSONException {
 
         esbRequestHeadersMap.put("Action", "urn:createBug");
         RestResponse<JSONObject> esbRestResponse =
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_createBug_mandatory.json");
 
-        final String bugId = esbRestResponse.getBody().getString("id");
+        final String bugId = esbRestResponse.getBody().getJSONObject("result").getString("id");
         connectorProperties.put("bugId", bugId);
 
         final String apiEndpoint = apiEndpointUrl + "/bug/" + bugId + authString;
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
         Assert.assertEquals(connectorProperties.getProperty("productName"), apiResponse.getString("product"));
         Assert.assertEquals(connectorProperties.getProperty("componentName"), apiResponse.getString("component"));
         Assert.assertEquals(connectorProperties.getProperty("bugSummary"), apiResponse.getString("summary"));
@@ -507,8 +504,8 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
      * @throws JSONException
      * @throws IOException
      */
-    @Test(groups = {"wso2.esb"}, description = "bugzilla {createBug} integration test with optional parameters.",
-            dependsOnMethods = {"testCreateProductWithMandatoryParameters", "testCreateComponentWithMandatoryParameters",
+    @Test(groups = {"wso2.esb"}, description = "bugzilla {createBug} integration test with optional parameters.", dependsOnMethods = {
+            "testCreateProductWithMandatoryParameters", "testCreateComponentWithMandatoryParameters",
             "testCreateUserWithMandatoryParameters", "testCreateUserWithOptionalParameters"})
     public void testCreateBugWithOptionalParameters() throws IOException, JSONException {
 
@@ -516,14 +513,14 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
         RestResponse<JSONObject> esbRestResponse =
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_createBug_optional.json");
 
-        final String bugId = esbRestResponse.getBody().getString("id");
+        final String bugId = esbRestResponse.getBody().getJSONObject("result").getString("id");
         connectorProperties.put("bugIdOpt", bugId);
 
         final String apiEndpoint = apiEndpointUrl + "/bug/" + bugId + authString;
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
 
         Assert.assertEquals(connectorProperties.getProperty("bugAlias"), apiResponse.getJSONArray("alias").getString(0));
         Assert.assertEquals(connectorProperties.getProperty("bugStatus").toLowerCase(), apiResponse.getString("status")
@@ -553,12 +550,12 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                 sendJsonRestRequest(apiEndpoint, "POST", apiRequestHeadersMap, "api_createBug_negative.json");
 
         Assert.assertEquals(apiRestResponse.getHttpStatusCode(), esbRestResponse.getHttpStatusCode());
-        Assert.assertEquals(apiRestResponse.getBody().getString("error"), esbRestResponse
-                .getBody().getString("error"));
-        Assert.assertEquals(apiRestResponse.getBody().getString("message"), esbRestResponse
-                .getBody().getString("message"));
-        Assert.assertEquals(apiRestResponse.getBody().getString("code"), esbRestResponse
-                .getBody().getString("code"));
+        Assert.assertEquals(apiRestResponse.getBody().getJSONObject("result").getString("error"), esbRestResponse
+                .getBody().getJSONObject("result").getString("error"));
+        Assert.assertEquals(apiRestResponse.getBody().getJSONObject("result").getString("message"), esbRestResponse
+                .getBody().getJSONObject("result").getString("message"));
+        Assert.assertEquals(apiRestResponse.getBody().getJSONObject("result").getString("code"), esbRestResponse
+                .getBody().getJSONObject("result").getString("code"));
     }
 
     /**
@@ -567,8 +564,7 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
      * @throws JSONException
      * @throws IOException
      */
-    @Test(groups = {"wso2.esb"}, description = "bugzilla {getBug} integration test with mandatory parameters.",
-            dependsOnMethods = {"testCreateBugWithMandatoryParameters"})
+    @Test(groups = {"wso2.esb"}, description = "bugzilla {getBug} integration test with mandatory parameters.", dependsOnMethods = {"testCreateBugWithMandatoryParameters"})
     public void testGetBugWithMandatoryParameters() throws IOException, JSONException {
 
         esbRequestHeadersMap.put("Action", "urn:getBug");
@@ -576,13 +572,13 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_getBug_mandatory.json");
 
         JSONObject esbResponse =
-                esbRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+                esbRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
 
         final String apiEndpoint = apiEndpointUrl + "/bug/" + connectorProperties.getProperty("bugId") + authString;
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
 
         Assert.assertEquals(apiResponse.getString("product"), esbResponse.getString("product"));
         Assert.assertEquals(apiResponse.getString("component"), esbResponse.getString("component"));
@@ -600,8 +596,7 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
      * @throws JSONException
      * @throws IOException
      */
-    @Test(groups = {"wso2.esb"}, description = "bugzilla {getBug} integration test with includeFields parameter.",
-            dependsOnMethods = {"testCreateBugWithMandatoryParameters"})
+    @Test(groups = {"wso2.esb"}, description = "bugzilla {getBug} integration test with includeFields parameter.", dependsOnMethods = {"testCreateBugWithMandatoryParameters"})
     public void testGetBugWithIncludeFieldsParameter() throws IOException, JSONException {
 
         esbRequestHeadersMap.put("Action", "urn:getBug");
@@ -609,13 +604,13 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_getBug_includeFields.json");
 
         JSONObject esbResponse =
-                esbRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+                esbRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
 
         final String apiEndpoint = apiEndpointUrl + "/bug/" + connectorProperties.getProperty("bugId") + authString;
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
 
         Assert.assertEquals(apiResponse.getString("product"), esbResponse.getString("product"));
         Assert.assertEquals(apiResponse.getString("component"), esbResponse.getString("component"));
@@ -630,8 +625,7 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
      * @throws JSONException
      * @throws IOException
      */
-    @Test(groups = {"wso2.esb"}, description = "bugzilla {getBug} integration test with excludeFields parameter.",
-            dependsOnMethods = {"testCreateBugWithMandatoryParameters"})
+    @Test(groups = {"wso2.esb"}, description = "bugzilla {getBug} integration test with excludeFields parameter.", dependsOnMethods = {"testCreateBugWithMandatoryParameters"})
     public void testGetBugWithExcludeFieldsParameter() throws IOException, JSONException {
 
         esbRequestHeadersMap.put("Action", "urn:getBug");
@@ -639,13 +633,13 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_getBug_excludeFields.json");
 
         JSONObject esbResponse =
-                esbRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+                esbRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
 
         final String apiEndpoint = apiEndpointUrl + "/bug/" + connectorProperties.getProperty("bugId") + authString;
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
 
         Assert.assertEquals(apiResponse.getString("severity"), esbResponse.getString("severity"));
         Assert.assertEquals(apiResponse.getString("platform"), esbResponse.getString("platform"));
@@ -660,8 +654,8 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
      * @throws JSONException
      * @throws IOException
      */
-    @Test(groups = {"wso2.esb"}, description = "bugzilla {searchBugs} integration test with mandatory parameters.",
-            dependsOnMethods = {"testCreateBugWithMandatoryParameters", "testCreateBugWithOptionalParameters"})
+    @Test(groups = {"wso2.esb"}, description = "bugzilla {searchBugs} integration test with mandatory parameters.", dependsOnMethods = {
+            "testCreateBugWithMandatoryParameters", "testCreateBugWithOptionalParameters"})
     public void testSearchBugsWithMandatoryParameters() throws IOException, JSONException {
 
         esbRequestHeadersMap.put("Action", "urn:searchBugs");
@@ -669,16 +663,16 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_searchBugs_mandatory.json");
 
         JSONObject esbResponse =
-                esbRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+                esbRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
 
         final String apiEndpoint = apiEndpointUrl + "/bug" + authString;
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
 
-        Assert.assertEquals(apiRestResponse.getBody().getJSONArray("bugs").length(),
-                esbRestResponse.getBody().getJSONArray("bugs").length());
+        Assert.assertEquals(apiRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").length(),
+                esbRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").length());
         Assert.assertEquals(apiResponse.getString("id"), esbResponse.getString("id"));
         Assert.assertEquals(apiResponse.getString("product"), esbResponse.getString("product"));
         Assert.assertEquals(apiResponse.getString("component"), esbResponse.getString("component"));
@@ -691,8 +685,8 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
      * @throws JSONException
      * @throws IOException
      */
-    @Test(groups = {"wso2.esb"}, description = "bugzilla {searchBugs} integration test with optional parameters.",
-            dependsOnMethods = {"testCreateBugWithMandatoryParameters", "testCreateBugWithOptionalParameters"})
+    @Test(groups = {"wso2.esb"}, description = "bugzilla {searchBugs} integration test with optional parameters.", dependsOnMethods = {
+            "testCreateBugWithMandatoryParameters", "testCreateBugWithOptionalParameters"})
     public void testSearchBugsWithOptionalParameters() throws IOException, JSONException {
 
         esbRequestHeadersMap.put("Action", "urn:searchBugs");
@@ -700,7 +694,7 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_searchBugs_optional.json");
 
         JSONObject esbResponse =
-                esbRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+                esbRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
 
         final String apiEndpoint =
                 apiEndpointUrl + "/bug" + authString + "&op_sys=" + connectorProperties.getProperty("bugOPSys")
@@ -710,10 +704,10 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
                         + connectorProperties.getProperty("productVersion");
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
         JSONObject apiResponse =
-                apiRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+                apiRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
 
-        Assert.assertEquals(apiRestResponse.getBody().getJSONArray("bugs").length(),
-                esbRestResponse.getBody().getJSONArray("bugs").length());
+        Assert.assertEquals(apiRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").length(),
+                esbRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").length());
         Assert.assertEquals(apiResponse.getString("id"), esbResponse.getString("id"));
         Assert.assertEquals(apiResponse.getString("product"), esbResponse.getString("product"));
         Assert.assertEquals(apiResponse.getString("component"), esbResponse.getString("component"));
@@ -737,12 +731,12 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
 
         Assert.assertEquals(apiRestResponse.getHttpStatusCode(), esbRestResponse.getHttpStatusCode());
-        Assert.assertEquals(apiRestResponse.getBody().getString("error"), esbRestResponse
-                .getBody().getString("error"));
-        Assert.assertEquals(apiRestResponse.getBody().getString("message"), esbRestResponse
-                .getBody().getString("message"));
-        Assert.assertEquals(apiRestResponse.getBody().getString("code"), esbRestResponse
-                .getBody().getString("code"));
+        Assert.assertEquals(apiRestResponse.getBody().getJSONObject("result").getString("error"), esbRestResponse
+                .getBody().getJSONObject("result").getString("error"));
+        Assert.assertEquals(apiRestResponse.getBody().getJSONObject("result").getString("message"), esbRestResponse
+                .getBody().getJSONObject("result").getString("message"));
+        Assert.assertEquals(apiRestResponse.getBody().getJSONObject("result").getString("code"), esbRestResponse
+                .getBody().getJSONObject("result").getString("code"));
     }
 
     /**
@@ -751,19 +745,18 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
      * @throws JSONException
      * @throws IOException
      */
-    @Test(groups = {"wso2.esb"}, description = "bugzilla {updateBug} integration test with optional parameters.",
-            dependsOnMethods = {
+    @Test(groups = {"wso2.esb"}, description = "bugzilla {updateBug} integration test with optional parameters.", dependsOnMethods = {
             "testCreateBugWithOptionalParameters", "testCreateUserWithMandatoryParameters"})
     public void testUpdateBugWithOptionalParameters() throws IOException, JSONException {
 
         final String apiEndpoint = apiEndpointUrl + "/bug/" + connectorProperties.getProperty("bugIdOpt") + authString;
         RestResponse<JSONObject> apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
-        JSONObject apiResponseBeforeUpdate = apiRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+        JSONObject apiResponseBeforeUpdate = apiRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
 
         esbRequestHeadersMap.put("Action", "urn:updateBug");
         sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_updateBug_optional.json");
         apiRestResponse = sendJsonRestRequest(apiEndpoint, "GET", apiRequestHeadersMap);
-        JSONObject apiResponseAfterUpdate = apiRestResponse.getBody().getJSONArray("bugs").getJSONObject(0);
+        JSONObject apiResponseAfterUpdate = apiRestResponse.getBody().getJSONObject("result").getJSONArray("bugs").getJSONObject(0);
 
         Assert.assertNotEquals(apiResponseBeforeUpdate.get("summary"), apiResponseAfterUpdate.get("summary"));
         Assert.assertNotEquals(apiResponseBeforeUpdate.get("deadline"), apiResponseAfterUpdate.get("deadline"));
@@ -784,16 +777,17 @@ public class BugzillaConnectorIntegrationTest extends ConnectorIntegrationTestBa
         RestResponse<JSONObject> esbRestResponse =
                 sendJsonRestRequest(proxyUrl, "POST", esbRequestHeadersMap, "esb_updateBug_negative.json");
 
-        JSONObject esbResponse = esbRestResponse.getBody();
+        JSONObject esbResponse = esbRestResponse.getBody().getJSONObject("result");
 
         final String apiEndpoint = apiEndpointUrl + "/bug/" + connectorProperties.getProperty("bugId") + authString;
         RestResponse<JSONObject> apiRestResponse =
                 sendJsonRestRequest(apiEndpoint, "PUT", apiRequestHeadersMap, "api_updateBug_negative.json");
 
-        JSONObject apiResponse = apiRestResponse.getBody();
+        JSONObject apiResponse = apiRestResponse.getBody().getJSONObject("result");
 
         Assert.assertEquals(apiResponse.get("code"), esbResponse.get("code"));
         Assert.assertEquals(apiResponse.get("error"), esbResponse.get("error"));
         Assert.assertEquals(apiResponse.get("message"), esbResponse.get("message"));
     }
+
 }

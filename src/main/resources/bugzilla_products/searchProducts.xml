@@ -77,7 +77,7 @@
                }  
             }
             // Remove the trailing '&'
-            urlQuery = urlQuery.toString().substring(0, urlQuery.toString().lastIndexOf("&"));
+            urlQuery = urlQuery.substring(0, urlQuery.length - 1);
             mc.setProperty('uri.var.urlQuery', urlQuery);
          ]]>
         </script>

@@ -4,6 +4,16 @@
   "name": "%s(productNameOpt)",
   "description": "%s(productDescriptionOpt)",
   "version": "1.0.0",
-  "hasUnconfirmed":%s(productConfirmation),
-  "isOpen":%s(productIsOpen)
+  "hasUnconfirmed":
+  %
+  s
+  (
+  productConfirmation
+  ),
+  "isOpen":
+  %
+  s
+  (
+  productIsOpen
+  )
 }
