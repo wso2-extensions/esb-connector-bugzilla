@@ -4,7 +4,7 @@
     "category": "Issue Tracking and Project Management",
     "documentationUrl": "https://docs.wso2.com/display/ESBCONNECTORS/Bugzilla+Connector",
     "description": "The Bugzilla connector allows you to access the Bugzilla REST API through the WSO2 ESB. Bugzilla is a server software designed to help you manage software development. It is a web based general purpose bug tracker and testing tool.",
-    "status": "Unsupported",
+    "status": "Active",
     "labels": [
         "connector"
     ],
